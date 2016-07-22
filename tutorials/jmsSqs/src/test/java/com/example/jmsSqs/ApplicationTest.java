@@ -7,6 +7,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import javax.validation.ConstraintViolationException;
 
@@ -87,9 +88,6 @@ public class ApplicationTest {
 
       // compare output lines to input                                                                                                            
       compare();
-
-      // delete the current queue
-      sqs.deleteQueue(currentQueueUrl);
       
       lc.shutdown();
     } catch (ConstraintViolationException e) {
@@ -150,21 +148,28 @@ public class ApplicationTest {
     }
   }
 
-  private static void compare() throws Exception {
+  private void compare() throws Exception {
     // read output file                                                                                                                           
     File file = new File(FILE_PATH);
     BufferedReader br = new BufferedReader(new FileReader(file));
-    ArrayList<String> list = new ArrayList<>();
+
+    HashSet<String> set = new HashSet<String>();
     String line;
     while (null != (line = br.readLine())) {
-      list.add(line);
+      set.add(line);
     }
     br.close();
 
+    // now delete the file, we don't need it anymore
+    Assert.assertTrue("Deleting "+file, file.delete());
+
+    // delete the current queue, since the Queue's job is done
+    sqs.deleteQueue(currentQueueUrl);
+
     // compare                                                                                                                                    
-    Assert.assertEquals("number of lines", lines.length, list.size());
+    Assert.assertEquals("number of lines", lines.length, set.size());
     for (int i = 0; i < lines.length; ++i) {
-      Assert.assertTrue("line", lines[i].equals(list.get(i)));
+      Assert.assertTrue("set contains "+lines[i], set.remove(lines[i]));
     }
   }
 
