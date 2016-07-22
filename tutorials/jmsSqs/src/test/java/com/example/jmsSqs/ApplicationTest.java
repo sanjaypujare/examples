@@ -129,8 +129,8 @@ public class ApplicationTest {
     String pre = "dt.operator.fileOut.prop.";
     conf.set(   pre + "filePath",        FILE_DIR);
     conf.set(   pre + "baseName",        FILE_NAME);
-    conf.setInt(pre + "maxLength",       40);
-    conf.setInt(pre + "rotationWindows", 3);
+    conf.setInt(pre + "maxLength",       50);
+    conf.setInt(pre + "rotationWindows", 10);
 
     return conf;
   }
