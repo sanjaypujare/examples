@@ -20,6 +20,7 @@ import javax.validation.ConstraintViolationException;
 
 import org.junit.Assert;
 import org.apache.activemq.ActiveMQConnectionFactory;
+import org.apache.activemq.broker.BrokerService;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -45,6 +46,7 @@ public class ApplicationTest {
   private Connection connection;
   private MessageProducer producer;
   private Session session;
+  private BrokerService broker;
   
   // test messages                                                                                                                                
   private static String[] lines =
@@ -83,8 +85,30 @@ public class ApplicationTest {
     }
   }
 
-  private void createAMQClient() throws JMSException 
+  /**
+   * Start JMS broker from here
+   *
+   * @throws Exception
+   */
+  private void startJMSService() throws Exception
   {
+    broker = new BrokerService();
+    String brokerName = "ActiveMQOutputOperator-broker";
+    broker.setBrokerName(brokerName);
+    broker.getPersistenceAdapter().setDirectory(new File("target/activemq-data/" + 
+        broker.getBrokerName() + '/' + 
+        org.apache.activemq.store.kahadb.KahaDBPersistenceAdapter.class.getSimpleName()).getAbsoluteFile());
+    broker.addConnector("tcp://localhost:61617?broker.persistent=false");
+    broker.getSystemUsage().getStoreUsage().setLimit(1024 * 1024 * 1024);  // 1GB
+    broker.getSystemUsage().getTempUsage().setLimit(100 * 1024 * 1024);    // 100MB
+    broker.setDeleteAllMessagesOnStartup(true);
+    broker.start();
+  }
+  
+  private void createAMQClient() throws Exception 
+  {
+    startJMSService();
+    
     // Create a ConnectionFactory
     ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://localhost");
 
@@ -128,8 +152,8 @@ public class ApplicationTest {
     String pre = "dt.operator.fileOut.prop.";
     conf.set(   pre + "filePath",        FILE_DIR);
     conf.set(   pre + "baseName",        FILE_NAME);
-    conf.setInt(pre + "maxLength",       50);
-    conf.setInt(pre + "rotationWindows", 10);
+    conf.setInt(pre + "maxLength",       45);
+    conf.setInt(pre + "rotationWindows", 1);
 
     return conf;
   }
